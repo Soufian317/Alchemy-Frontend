@@ -309,7 +309,7 @@ const AlchemyApp = () => {
         loop
         preload="auto"
       >
-        <source src="/assets/music/Fantasy Background Music Celtic Relaxation Free Use.mp3" type="audio/mpeg" />
+        <source src="public\background-music.mp3" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
 
