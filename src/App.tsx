@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, BookOpen, Sparkles, Zap, Eye, Plus, Settings, Trash2, Star, Flame, Droplets, Wind, Play, Pause, Volume2 } from 'lucide-react';
+import { Send, BookOpen, Sparkles, Zap, Eye, Plus, Settings, Trash2, Star, Flame, Droplets, Wind, Play, Pause, Volume2, Users, X } from 'lucide-react';
 
 interface PixelButtonProps {
   children: React.ReactNode;
@@ -173,6 +173,7 @@ const AlchemyApp = () => {
   const [volume, setVolume] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -301,6 +302,9 @@ const AlchemyApp = () => {
     setSavedRecipes(prev => prev.filter(recipe => recipe.id !== id));
   }, []);
 
+  const openAboutModal = useCallback(() => setIsAboutModalOpen(true), []);
+  const closeAboutModal = useCallback(() => setIsAboutModalOpen(false), []);
+
   return (
     <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white flex flex-col p-4 space-y-4 font-mono relative overflow-hidden">
       {/* Audio Element */}
@@ -309,9 +313,107 @@ const AlchemyApp = () => {
         loop
         preload="auto"
       >
-        <source src="public\background-music.mp3" type="audio/mpeg" />
+        <source src="\background-music.mp3" type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
+
+      {/* About Modal */}
+      {isAboutModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-modalBackdrop">
+          <PixelPanel className="relative max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-modalAppear" glow>
+            {/* Close Button */}
+            <PixelButton
+              onClick={closeAboutModal}
+              variant="danger"
+              className="absolute top-4 right-4 z-10 p-2"
+            >
+              <X className="w-5 h-5" />
+            </PixelButton>
+
+            {/* Image Area - Top Section */}
+            <div className="relative w-full h-[60vh] overflow-hidden">
+              {/* Background Image */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-imageReveal"
+                style={{ 
+                  backgroundImage: 'url("/Team - Background.jpeg")',
+                  filter: 'brightness(0.9) contrast(1.1)'
+                }}
+              />
+              
+              {/* Magical Overlay Effects - Light */}
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-indigo-900/10" />
+              
+              {/* Floating Magical Elements */}
+              <div className="absolute top-10 left-10 animate-orbFloat">
+                <MagicalOrb color="#8b5cf6" size="w-6 h-6" delay={0} />
+              </div>
+              <div className="absolute top-20 right-20 animate-orbFloat">
+                <MagicalOrb color="#06b6d4" size="w-4 h-4" delay={1} />
+              </div>
+              <div className="absolute bottom-10 left-20 animate-orbFloat">
+                <MagicalOrb color="#f59e0b" size="w-5 h-5" delay={2} />
+              </div>
+
+              {/* Foreground Image - Full Size, No Overlay */}
+              <div 
+                className="absolute inset-0 bg-contain bg-center bg-no-repeat animate-foregroundAppear"
+                style={{ 
+                  backgroundImage: 'url("/Team - Foreground.png")',
+                  backgroundSize: 'contain'                }}
+              />
+            </div>
+
+            {/* Text Area - Bottom Section (Separate) */}
+            <div className="w-full bg-gradient-to-br from-purple-900/95 via-purple-800/90 to-indigo-900/85 p-6 backdrop-blur-lg border-t-2 border-purple-400/50 animate-textSlideUp">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <FloatingElement>
+                    <Users className="w-7 h-7 text-purple-400 animate-pulse" />
+                  </FloatingElement>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                    ✨ Über Unser Mystisches Team ✨
+                  </h2>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6 text-left">
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-bold text-purple-300 flex items-center space-x-2">
+                      <Sparkles className="w-5 h-5 animate-pulse" />
+                      <span>🔮 Unsere Mission</span>
+                    </h3>
+                    <p className="text-purple-100 leading-relaxed">
+                      Wir sind eine Gruppe leidenschaftlicher Alchemisten, die sich der Kunst der mystischen 
+                      Braukunst verschrieben haben. Mit jahrhundertealtem Wissen und moderner Magie erschaffen 
+                      wir einzigartige Elixiere und Tränke.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-bold text-cyan-300 flex items-center space-x-2">
+                      <Zap className="w-5 h-5 animate-pulse" />
+                      <span>⚗️ Unsere Expertise</span>
+                    </h3>
+                    <ul className="text-cyan-100 space-y-1">
+                      <li>• 🌟 Legendäre Trank-Rezepturen</li>
+                      <li>• ✨ Mystische Ingredienzen-Beschaffung</li>
+                      <li>• 🔥 Magische Brau-Techniken</li>
+                      <li>• 🌙 Mondschein-Destillation</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex justify-center space-x-4 mt-6">
+                  <PixelButton variant="primary" onClick={closeAboutModal} className="px-8 flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                    <span>🚀 Zur Alchemie zurück</span>
+                  </PixelButton>
+                </div>
+              </div>
+            </div>
+          </PixelPanel>
+        </div>
+      )}
 
       {/* Animated Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -421,6 +523,11 @@ const AlchemyApp = () => {
                 <span className="text-xs text-purple-300">{isPlaying ? '🎵 Playing' : '⏸️ Paused'}</span>
               </div>
             </div>
+
+            <PixelButton variant="success" className="p-2 flex items-center space-x-2" onClick={openAboutModal}>
+              <Users className="w-4 h-4 animate-pulse" />
+              <span>👥 About us</span>
+            </PixelButton>
 
             <PixelButton variant="secondary" className="p-2" onClick={() => console.log('Settings')}>
               <Settings className="w-4 h-4 animate-spin" style={{ animationDuration: '8s' }} />
@@ -631,6 +738,67 @@ const AlchemyApp = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes modalBackdrop {
+          from { opacity: 0; backdrop-filter: blur(0px); }
+          to { opacity: 1; backdrop-filter: blur(12px); }
+        }
+        .animate-modalBackdrop {
+          animation: modalBackdrop 0.4s ease-out forwards;
+        }
+        
+        @keyframes modalAppear {
+          from { 
+            opacity: 0; 
+            transform: scale(0.8) translateY(-20px); 
+            filter: drop-shadow(0 0 0px rgba(139, 92, 246, 0));
+          }
+          to { 
+            opacity: 1; 
+            transform: scale(1) translateY(0px); 
+            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+          }
+        }
+        .animate-modalAppear {
+          animation: modalAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes imageReveal {
+          from { opacity: 0; transform: scale(1.1); filter: brightness(0.3) contrast(1.1); }
+          to { opacity: 1; transform: scale(1); filter: brightness(0.9) contrast(1.1); }
+        }
+        .animate-imageReveal {
+          animation: imageReveal 0.8s ease-out 0.2s forwards;
+          opacity: 0;
+        }
+        
+        @keyframes foregroundAppear {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-foregroundAppear {
+          animation: foregroundAppear 1s ease-out 0.4s forwards;
+          opacity: 0;
+        }
+        
+        @keyframes textSlideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0px); }
+        }
+        .animate-textSlideUp {
+          animation: textSlideUp 0.7s ease-out 0.6s forwards;
+          opacity: 0;
+        }
+        
+        @keyframes orbFloat {
+          0% { opacity: 0; transform: translateY(20px) scale(0.5); }
+          50% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+          100% { opacity: 1; transform: translateY(0px) scale(1); }
+        }
+        .animate-orbFloat {
+          animation: orbFloat 1.5s ease-out 0.8s forwards;
+          opacity: 0;
         }
       `}</style>
     </div>
