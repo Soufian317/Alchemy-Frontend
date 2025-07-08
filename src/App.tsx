@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, BookOpen, Sparkles, Zap, Eye, Plus, Settings, Trash2, Star, Flame, Droplets, Wind, Play, Pause, Volume2, Users, X } from 'lucide-react';
+import { Send, Sparkles, Play, Pause, Volume2, Users, X, ChevronRight, Beaker, Atom, Gem, Settings } from 'lucide-react';
 
 interface PixelButtonProps {
   children: React.ReactNode;
   onClick: () => void;
   className?: string;
-  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'ghost';
   disabled?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-interface PixelPanelProps {
+interface ModernCardProps {
   children: React.ReactNode;
   className?: string;
   glow?: boolean;
+  variant?: 'default' | 'glass' | 'solid';
 }
 
 interface Message {
@@ -22,43 +24,16 @@ interface Message {
   timestamp: Date;
 }
 
-interface Recipe {
-  id: number;
-  name: string;
-  ingredients: string[];
-  difficulty: string;
-  effect: string;
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
-  color: string;
-  icon: string;
-}
 
-const getRarityGradient = (rarity: Recipe['rarity']) => {
-  switch(rarity) {
-    case 'Common': return 'from-gray-600/70 to-gray-800/70';
-    case 'Rare': return 'from-blue-600/70 to-blue-800/70';
-    case 'Epic': return 'from-purple-600/70 to-purple-800/70';
-    case 'Legendary': return 'from-yellow-500/70 to-orange-600/70';
-    default: return 'from-gray-600/70 to-gray-800/70';
-  }
-};
 
-const getRarityBorder = (rarity: Recipe['rarity']) => {
-  switch(rarity) {
-    case 'Common': return 'border-gray-400';
-    case 'Rare': return 'border-blue-400';
-    case 'Epic': return 'border-purple-400';
-    case 'Legendary': return 'border-yellow-400';
-    default: return 'border-gray-400';
-  }
-};
+
 
 const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => (
   <div 
-    className="animate-bounce"
+    className="animate-float"
     style={{ 
       animationDelay: `${delay}s`,
-      animationDuration: '3s',
+      animationDuration: '6s',
       animationIterationCount: 'infinite'
     }}
   >
@@ -68,22 +43,36 @@ const FloatingElement = ({ children, delay = 0 }: { children: React.ReactNode, d
 
 const MagicalOrb = ({ color, size = 'w-3 h-3', delay = 0 }: { color: string, size?: string, delay?: number }) => (
   <div 
-    className={`${size} rounded-full animate-pulse`}
+    className={`${size} rounded-full animate-pulse-glow backdrop-blur-sm`}
     style={{ 
       backgroundColor: color,
-      boxShadow: `0 0 20px ${color}, 0 0 40px ${color}60`,
+      boxShadow: `0 0 20px ${color}80, 0 0 40px ${color}40`,
       animationDelay: `${delay}s`,
-      animationDuration: '2s'
+      animationDuration: '3s'
     }}
   />
 );
 
-const PixelButton = React.memo(({ children, onClick, className = '', variant = 'primary', disabled = false }: PixelButtonProps) => {
+const ModernButton = React.memo(({ 
+  children, 
+  onClick, 
+  className = '', 
+  variant = 'primary', 
+  disabled = false,
+  size = 'md' 
+}: PixelButtonProps) => {
   const variants = {
-    primary: 'from-indigo-600 to-purple-700 border-indigo-400 text-white shadow-lg shadow-indigo-500/50',
-    secondary: 'from-slate-600 to-slate-700 border-slate-400 text-white shadow-lg shadow-slate-500/50',
-    danger: 'from-red-600 to-red-700 border-red-400 text-white shadow-lg shadow-red-500/50',
-    success: 'from-emerald-600 to-emerald-700 border-emerald-400 text-white shadow-lg shadow-emerald-500/50'
+    primary: 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-emerald-400/50 shadow-emerald-500/25',
+    secondary: 'bg-white/10 text-white border-white/20 shadow-white/10 hover:bg-white/20',
+    danger: 'bg-gradient-to-r from-red-500 to-pink-500 text-white border-red-400/50 shadow-red-500/25',
+    success: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-400/50 shadow-green-500/25',
+    ghost: 'bg-transparent text-white border-white/30 hover:bg-white/10 shadow-none'
+  };
+
+  const sizes = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base'
   };
   
   return (
@@ -91,35 +80,37 @@ const PixelButton = React.memo(({ children, onClick, className = '', variant = '
       onClick={onClick}
       disabled={disabled}
       className={`
-        px-4 py-2 font-bold text-sm border-2 bg-gradient-to-b transition-all duration-300
-        hover:brightness-125 hover:scale-105 active:scale-95 active:brightness-110
-        hover:shadow-2xl transform
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100 disabled:hover:scale-100
+        ${sizes[size]} font-medium rounded-xl border backdrop-blur-sm 
+        transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
         ${variants[variant]} ${className}
       `}
-      style={{
-        clipPath: 'polygon(4px 0%, 100% 0%, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0% 100%, 0% 4px)',
-        filter: 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.3))'
-      }}
     >
       {children}
     </button>
   );
 });
 
-const PixelPanel = React.memo(({ children, className = '', glow = false }: PixelPanelProps) => {
+const ModernCard = React.memo(({ 
+  children, 
+  className = '', 
+  glow = false,
+  variant = 'default'
+}: ModernCardProps) => {
+  const variants = {
+    default: 'bg-white/10 border-white/20',
+    glass: 'bg-white/5 border-white/10',
+    solid: 'bg-gray-900/90 border-gray-700'
+  };
+
   return (
     <div 
       className={`
-        bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-2 border-slate-600 
-        backdrop-blur-sm transition-all duration-500
-        ${glow ? 'shadow-2xl shadow-cyan-500/30 border-cyan-400/50' : 'shadow-lg shadow-black/50'}
+        ${variants[variant]} border backdrop-blur-xl rounded-2xl 
+        transition-all duration-500 shadow-xl
+        ${glow ? 'shadow-cyan-500/20 border-cyan-400/30' : ''}
         ${className}
       `}
-      style={{
-        clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
-        filter: glow ? 'drop-shadow(0 0 15px rgba(34, 211, 238, 0.4))' : 'none'
-      }}
     >
       {children}
     </div>
@@ -131,49 +122,19 @@ const AlchemyApp = () => {
     {
       id: 1,
       type: 'ai',
-      content: '🔮 Greetings, young alchemist! I am Arcanum, your mystical brewing companion. What magical concoction shall we create today? ✨',
+      content: '🔮 Willkommen in der modernen Alchemie-Werkstatt! Ich bin Arcanum, dein KI-Assistent für mystische Braukunst. Welche magischen Experimente sollen wir heute durchführen? ✨',
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
-  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([
-    {
-      id: 1,
-      name: 'Crimson Healing Draught',
-      ingredients: ['Moonbell Petals', 'Crystal Dewdrops', 'Phoenix Ember'],
-      difficulty: 'Intermediate',
-      effect: 'Restores 75 Health over 10 seconds',
-      rarity: 'Rare',
-      color: '#e74c3c',
-      icon: '🔴'
-    },
-    {
-      id: 2,
-      name: 'Ethereal Veil Elixir',
-      ingredients: ['Shadow Moss', 'Spirit Essence', 'Starlight Powder'],
-      difficulty: 'Master',
-      effect: 'Grants invisibility for 30 seconds',
-      rarity: 'Epic',
-      color: '#9b59b6',
-      icon: '👻'
-    },
-    {
-      id: 3,
-      name: 'Lightning Strike Potion',
-      ingredients: ['Storm Essence', 'Thunder Crystal', 'Sky Root'],
-      difficulty: 'Expert',
-      effect: 'Channels lightning through your spells',
-      rarity: 'Legendary',
-      color: '#f1c40f',
-      icon: '⚡'
-    }
-  ]);
-  const [activeTab, setActiveTab] = useState('chat');
+
+
   const [isTyping, setIsTyping] = useState(false);
   const [volume, setVolume] = useState(50);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -242,11 +203,11 @@ const AlchemyApp = () => {
 
     setTimeout(() => {
       const responses = [
-        '⚗️ Fascinating! For this mystical brew, you\'ll need special ingredients from the Enchanted Forest. The combination creates powerful magical energies! ✨',
-        '🔮 Ah, a classic combination! These ingredients resonate with ancient magic. Mix under moonlight for maximum potency. Success rate: 87% 🌙',
-        '✨ Excellent selection! This legendary formula was discovered in the Crystal Caverns. Handle with extreme care - the magical essence is volatile! 💎',
-        '🌟 Marvelous choice! This potion will channel the very essence of the elements through your being. Prepare for extraordinary magical enhancement! 🔥⚡🌊',
-        '🪄 Intriguing! These components create a harmony of magical forces. The resulting elixir will grant you temporary mastery over arcane energies! ⭐'
+        '⚗️ Faszinierend! Diese quantenbasierte Formel erfordert präzise Molekularstrukturen. Die Synthesewahrscheinlichkeit liegt bei 94%! 🧪',
+        '🔬 Ausgezeichnete Auswahl! Diese Nano-Verbindung nutzt fortschrittliche Bioengineering-Prinzipien. Erfolgsrate: 89% 🧬',
+        '✨ Brillante Kombination! Diese Formel basiert auf Quantenphysik und ätherischen Energien. Extrem hohe Potenz! ⚛️',
+        '🌟 Meisterhafte Wahl! Diese Synthese vereint moderne Wissenschaft mit mystischen Elementen. Bereite dich auf außergewöhnliche Resultate vor! 🔮',
+        '🪄 Innovativ! Diese Quantenformel erschafft harmonische Energiefelder. Das Resultat wird deine alchemistischen Fähigkeiten verstärken! ⭐'
       ];
       
       const aiMessage: Message = {
@@ -272,346 +233,328 @@ const AlchemyApp = () => {
     setInputMessage(e.target.value);
   }, []);
 
-  const switchToChat = useCallback(() => setActiveTab('chat'), []);
-  const switchToRecipes = useCallback(() => setActiveTab('recipes'), []);
 
-  const saveNewRecipe = useCallback(() => {
-    const recipes = [
-      { name: 'Mystic Fire Brew', icon: '🔥', color: '#ff4757', rarity: 'Rare' as const },
-      { name: 'Frost Shield Elixir', icon: '❄️', color: '#3742fa', rarity: 'Epic' as const },
-      { name: 'Wind Walker Potion', icon: '🌪️', color: '#2ed573', rarity: 'Common' as const },
-      { name: 'Dragon Breath Draught', icon: '🐉', color: '#ff6b35', rarity: 'Legendary' as const }
-    ];
-    
-    const randomRecipe = recipes[Math.floor(Math.random() * recipes.length)];
-    
-    const newRecipe: Recipe = {
-      id: Date.now(),
-      name: randomRecipe.name,
-      ingredients: ['Mystical Element', 'Ethereal Essence', 'Arcane Crystal'],
-      difficulty: 'Unknown',
-      effect: 'Channels powerful magical energies',
-      rarity: randomRecipe.rarity,
-      color: randomRecipe.color,
-      icon: randomRecipe.icon
-    };
-    setSavedRecipes(prev => [...prev, newRecipe]);
+
+
+
+  const openAboutModal = useCallback(() => {
+    setIsAboutModalOpen(true);
+    setIsVideoLoaded(false); // Reset video loading state
+  }, []);
+  
+  const closeAboutModal = useCallback(() => {
+    setIsAboutModalOpen(false);
+    setIsVideoLoaded(false);
   }, []);
 
-  const deleteRecipe = useCallback((id: number) => {
-    setSavedRecipes(prev => prev.filter(recipe => recipe.id !== id));
+  const handleVideoLoaded = useCallback(() => {
+    setIsVideoLoaded(true);
   }, []);
-
-  const openAboutModal = useCallback(() => setIsAboutModalOpen(true), []);
-  const closeAboutModal = useCallback(() => setIsAboutModalOpen(false), []);
 
   return (
-    <div className="h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white flex flex-col p-4 space-y-4 font-mono relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white flex flex-col p-4 space-y-6 relative overflow-hidden">
       {/* Audio Element */}
-      <audio
-        ref={audioRef}
-        loop
-        preload="auto"
-      >
-        <source src="\background-music.mp3" type="audio/mpeg" />
-        Your browser does not support the audio element.
+      <audio ref={audioRef} loop preload="auto">
+        <source src="/background-music.mp3" type="audio/mpeg" />
       </audio>
+
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-20">
+          <MagicalOrb color="#10b981" size="w-4 h-4" delay={0} />
+        </div>
+        <div className="absolute top-40 right-32">
+          <MagicalOrb color="#8b5cf6" size="w-3 h-3" delay={0.5} />
+        </div>
+        <div className="absolute bottom-40 left-40">
+          <MagicalOrb color="#f59e0b" size="w-5 h-5" delay={1} />
+        </div>
+        <div className="absolute top-1/2 right-20">
+          <MagicalOrb color="#06b6d4" size="w-2 h-2" delay={1.5} />
+        </div>
+        
+        {/* Floating modern symbols */}
+        <div className="absolute top-32 left-1/3">
+          <FloatingElement delay={0}>
+            <div className="text-emerald-400/20 text-3xl">⚛️</div>
+          </FloatingElement>
+        </div>
+        <div className="absolute bottom-32 right-1/4">
+          <FloatingElement delay={1}>
+            <div className="text-cyan-400/20 text-2xl">🧬</div>
+          </FloatingElement>
+        </div>
+        <div className="absolute top-1/3 right-1/3">
+          <FloatingElement delay={2}>
+            <div className="text-purple-400/20 text-xl">🔬</div>
+          </FloatingElement>
+        </div>
+      </div>
 
       {/* About Modal */}
       {isAboutModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-modalBackdrop">
-          <PixelPanel className="relative max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-modalAppear" glow>
-            {/* Close Button */}
-            <PixelButton
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <ModernCard className="relative max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col" glow>
+            <ModernButton
               onClick={closeAboutModal}
               variant="danger"
-              className="absolute top-4 right-4 z-10 p-2"
+              className="absolute top-4 right-4 z-10 !p-2"
             >
               <X className="w-5 h-5" />
-            </PixelButton>
+            </ModernButton>
 
-            {/* Image Area - Top Section */}
-            <div className="relative w-full h-[60vh] overflow-hidden">
-              {/* Background Image */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-imageReveal"
-                style={{ 
-                  backgroundImage: 'url("/Team - Background.jpeg")',
-                  filter: 'brightness(0.9) contrast(1.1)'
-                }}
-              />
+            <div className="relative w-full h-[60vh] overflow-hidden rounded-t-2xl">
+              {/* Video Background */}
+              <video
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                onLoadedData={handleVideoLoaded}
+              >
+                <source src="/team.mp4" type="video/mp4" />
+              </video>
               
-              {/* Magical Overlay Effects - Light */}
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-indigo-900/10" />
+              {/* Loading Overlay */}
+              {!isVideoLoaded && (
+                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-emerald-300 text-lg">Video wird geladen...</p>
+                  </div>
+                </div>
+              )}
               
-              {/* Floating Magical Elements */}
-              <div className="absolute top-10 left-10 animate-orbFloat">
-                <MagicalOrb color="#8b5cf6" size="w-6 h-6" delay={0} />
-              </div>
-              <div className="absolute top-20 right-20 animate-orbFloat">
-                <MagicalOrb color="#06b6d4" size="w-4 h-4" delay={1} />
-              </div>
-              <div className="absolute bottom-10 left-20 animate-orbFloat">
-                <MagicalOrb color="#f59e0b" size="w-5 h-5" delay={2} />
-              </div>
-
-              {/* Foreground Image - Full Size, No Overlay */}
-              <div 
-                className="absolute inset-0 bg-contain bg-center bg-no-repeat animate-foregroundAppear"
-                style={{ 
-                  backgroundImage: 'url("/Team - Foreground.png")',
-                  backgroundSize: 'contain'                }}
-              />
+              {/* Video Overlay */}
+              {isVideoLoaded && (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-gray-900/30" />
+                  
+                  {/* Floating Effects */}
+                  <div className="absolute top-10 left-10">
+                    <MagicalOrb color="#10b981" size="w-6 h-6" delay={0} />
+                  </div>
+                  <div className="absolute top-20 right-20">
+                    <MagicalOrb color="#8b5cf6" size="w-4 h-4" delay={1} />
+                  </div>
+                  <div className="absolute bottom-20 left-1/4">
+                    <MagicalOrb color="#06b6d4" size="w-5 h-5" delay={0.5} />
+                  </div>
+                  <div className="absolute top-1/3 right-1/3">
+                    <MagicalOrb color="#f59e0b" size="w-3 h-3" delay={1.5} />
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Text Area - Bottom Section (Separate) */}
-            <div className="w-full bg-gradient-to-br from-purple-900/95 via-purple-800/90 to-indigo-900/85 p-6 backdrop-blur-lg border-t-2 border-purple-400/50 animate-textSlideUp">
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center space-x-3 mb-4">
-                  <FloatingElement>
-                    <Users className="w-7 h-7 text-purple-400 animate-pulse" />
-                  </FloatingElement>
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                    ✨ Über Unser Mystisches Team ✨
-                  </h2>
-                </div>
-                
-                <div className="grid md:grid-cols-2 gap-6 text-left">
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-purple-300 flex items-center space-x-2">
-                      <Sparkles className="w-5 h-5 animate-pulse" />
-                      <span>🔮 Unsere Mission</span>
-                    </h3>
-                    <p className="text-purple-100 leading-relaxed">
-                      Wir sind eine Gruppe leidenschaftlicher Alchemisten, die sich der Kunst der mystischen 
-                      Braukunst verschrieben haben. Mit jahrhundertealtem Wissen und moderner Magie erschaffen 
-                      wir einzigartige Elixiere und Tränke.
-                    </p>
+            {/* Content Panel - Only show when video is loaded */}
+            {isVideoLoaded && (
+              <div className="w-full bg-gradient-to-br from-gray-900/95 to-slate-900/90 p-8 backdrop-blur-xl rounded-b-2xl">
+                <div className="text-center space-y-6">
+                  <div className="flex items-center justify-center space-x-3 mb-6">
+                    <FloatingElement>
+                      <Users className="w-8 h-8 text-emerald-400" />
+                    </FloatingElement>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                      Unser Innovatives Team
+                    </h2>
                   </div>
                   
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-cyan-300 flex items-center space-x-2">
-                      <Zap className="w-5 h-5 animate-pulse" />
-                      <span>⚗️ Unsere Expertise</span>
+                  <div className="grid md:grid-cols-2 gap-8 text-left">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-emerald-300 flex items-center space-x-2">
+                        <Atom className="w-6 h-6" />
+                        <span>Unsere Mission</span>
+                      </h3>
+                      <p className="text-gray-300 leading-relaxed">
+                        Wir kombinieren traditionelle Alchemie mit modernster Technologie. Unser interdisziplinäres Team 
+                        aus Wissenschaftlern, Ingenieuren und Mystikern entwickelt revolutionäre Lösungen für die 
+                        Zukunft der Braukunst.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-cyan-300 flex items-center space-x-2">
+                        <Gem className="w-6 h-6" />
+                        <span>Unsere Technologie</span>
+                      </h3>
+                      <ul className="text-gray-300 space-y-2">
+                        <li className="flex items-center space-x-2">
+                          <ChevronRight className="w-4 h-4 text-emerald-400" />
+                          <span>RAG mit Vektordatenbank</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <ChevronRight className="w-4 h-4 text-cyan-400" />
+                          <span>KI-Modell Analyse & Optimierung</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <ChevronRight className="w-4 h-4 text-purple-400" />
+                          <span>Web Scraping & Datenbeschaffung</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <ChevronRight className="w-4 h-4 text-amber-400" />
+                          <span>Frontend Entwicklung</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Team Members */}
+                  <div className="mt-8 p-6 bg-gradient-to-r from-gray-800/50 to-slate-800/50 rounded-2xl border border-white/10 backdrop-blur-sm">
+                    <h3 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                      Unser Team
                     </h3>
-                    <ul className="text-cyan-100 space-y-1">
-                      <li>• 🌟 Legendäre Trank-Rezepturen</li>
-                      <li>• ✨ Mystische Ingredienzen-Beschaffung</li>
-                      <li>• 🔥 Magische Brau-Techniken</li>
-                      <li>• 🌙 Mondschein-Destillation</li>
-                    </ul>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { name: 'Soufian Bernard', role: 'Implementierung responsiver Frontend-Anwendungen', icon: '💻' },
+                        { name: 'Linda Nehring', role: 'Konzeption und Implementierung von RAG und Vektordatenbank', icon: '🗄️' },
+                        { name: 'Laurin Layyous', role: 'Vergleich verschiedener KI-Modelle zur Ermittlung optimaler Ergebnisse', icon: '🤖' },
+                        { name: 'Daniel Kuhlicke', role: 'Implementierung eines Web-Scrapers zur automatisierten Datenbeschaffung', icon: '🕷️' }
+                      ].map((member, index) => (
+                        <div 
+                          key={member.name}
+                          className="flex items-start space-x-4 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:scale-105"
+                        >
+                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-xl shadow-lg flex-shrink-0">
+                            {member.icon}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-white text-lg">{member.name}</h4>
+                            <p className="text-emerald-300 text-sm leading-relaxed">{member.role}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center space-x-4 mt-8">
+                    <ModernButton variant="primary" onClick={closeAboutModal} className="px-8 flex items-center space-x-2">
+                      <Beaker className="w-5 h-5" />
+                      <span>Zurück zum Labor</span>
+                    </ModernButton>
                   </div>
                 </div>
-
-                <div className="flex justify-center space-x-4 mt-6">
-                  <PixelButton variant="primary" onClick={closeAboutModal} className="px-8 flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4 animate-pulse" />
-                    <span>🚀 Zur Alchemie zurück</span>
-                  </PixelButton>
-                </div>
               </div>
-            </div>
-          </PixelPanel>
+            )}
+          </ModernCard>
         </div>
       )}
 
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Floating magical orbs */}
-        <div className="absolute top-10 left-10">
-          <MagicalOrb color="#8b5cf6" size="w-4 h-4" delay={0} />
-        </div>
-        <div className="absolute top-32 right-20">
-          <MagicalOrb color="#06b6d4" size="w-3 h-3" delay={0.5} />
-        </div>
-        <div className="absolute bottom-32 left-32">
-          <MagicalOrb color="#f59e0b" size="w-5 h-5" delay={1} />
-        </div>
-        <div className="absolute top-1/2 right-10">
-          <MagicalOrb color="#ef4444" size="w-2 h-2" delay={1.5} />
-        </div>
-        <div className="absolute bottom-20 right-1/3">
-          <MagicalOrb color="#10b981" size="w-4 h-4" delay={2} />
-        </div>
-        
-        {/* Floating icons */}
-        <div className="absolute top-20 left-1/3">
-          <FloatingElement delay={0}>
-            <div className="text-purple-400 text-2xl opacity-20">⚗️</div>
-          </FloatingElement>
-        </div>
-        <div className="absolute bottom-40 left-20">
-          <FloatingElement delay={1}>
-            <div className="text-cyan-400 text-xl opacity-20">🔮</div>
-          </FloatingElement>
-        </div>
-        <div className="absolute top-40 right-1/4">
-          <FloatingElement delay={2}>
-            <div className="text-yellow-400 text-xl opacity-20">✨</div>
-          </FloatingElement>
-        </div>
-      </div>
-
       {/* Header */}
-      <PixelPanel glow className="flex-shrink-0 p-4 relative">
+      <ModernCard glow className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <FloatingElement>
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-purple-600 border-2 border-purple-300 flex items-center justify-center text-2xl relative" style={{ clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))' }}>
-                ⚗️
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 opacity-30 animate-pulse rounded-full"></div>
+            <div className="relative">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 via-cyan-400 to-blue-500 rounded-2xl flex items-center justify-center text-2xl border-2 border-cyan-400/50 shadow-lg shadow-cyan-400/30">
+                <img src="./public/logo.png" alt="Arcanum" className="w-10 h-10 scale-150" />
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-cyan-400/20 rounded-2xl animate-pulse"></div>
               </div>
-            </FloatingElement>
+            </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-pulse">
-                ✨ Mystical Alchemy Workshop ✨
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                KI Arcanum
               </h1>
               <div className="flex items-center space-x-2 mt-1">
-                <Zap className="w-3 h-3 text-yellow-400 animate-pulse" />
-                <div className="text-xs text-purple-300">AI-Powered Magical Brewing Assistant</div>
+                <Atom className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm text-gray-400">KI-gestützte Braukunst der Zukunft</span>
               </div>
             </div>
           </div>
+          
           <div className="flex items-center space-x-4">
             {/* Music Controls */}
-            <div className="flex items-center space-x-3 bg-gradient-to-r from-purple-800 to-indigo-800 px-4 py-2 rounded-lg border-2 border-purple-400/50 backdrop-blur-sm">
-              {/* Play/Pause Button */}
-              <PixelButton 
+            <ModernCard variant="glass" className="flex items-center space-x-3 px-4 py-2">
+              <ModernButton 
                 onClick={togglePlayPause}
-                variant="primary" 
-                className="p-2 !px-2 !py-2"
+                variant="ghost" 
+                size="sm"
+                className="!p-2"
               >
-                {isPlaying ? 
-                  <Pause className="w-4 h-4" /> : 
-                  <Play className="w-4 h-4" />
-                }
-              </PixelButton>
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </ModernButton>
               
-              {/* Volume Control */}
               <div className="flex items-center space-x-2">
-                <PixelButton 
+                <ModernButton 
                   onClick={toggleMute}
-                  variant="secondary" 
-                  className="p-1.5 !px-1.5 !py-1.5"
+                  variant="ghost" 
+                  size="sm"
+                  className="!p-1.5"
                 >
                   <Volume2 className={`w-3 h-3 ${isMuted ? 'text-red-400' : 'text-cyan-300'}`} />
-                </PixelButton>
+                </ModernButton>
                 
-                <div className="flex items-center space-x-1">
-                  <span className="text-xs font-bold text-purple-200">Vol:</span>
+                <div className="flex items-center space-x-2">
                   <div 
-                    className="w-20 h-3 bg-purple-900 rounded-full overflow-hidden cursor-pointer border border-purple-500/50 hover:border-purple-400 transition-colors"
+                    className="w-16 h-2 bg-white/10 rounded-full overflow-hidden cursor-pointer hover:bg-white/20 transition-colors"
                     onClick={handleVolumeClick}
                   >
                     <div 
-                      className="h-full bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300 transition-all duration-200 shadow-lg relative"
-                      style={{ 
-                        width: `${isMuted ? 0 : volume}%`, 
-                        boxShadow: '0 0 10px rgba(168, 85, 247, 0.6)' 
-                      }}
-                    >
-                      <div className="absolute right-0 top-0 h-full w-1 bg-white/50 animate-pulse"></div>
-                    </div>
+                      className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-200"
+                      style={{ width: `${isMuted ? 0 : volume}%` }}
+                    />
                   </div>
-                  <span className="text-xs text-purple-200 min-w-8">{isMuted ? '🔇' : `${volume}%`}</span>
+                  <span className="text-xs text-gray-400 min-w-8">{volume}%</span>
                 </div>
               </div>
-              
-              {/* Music Status */}
-              <div className="flex items-center space-x-1">
-                <div className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-                <span className="text-xs text-purple-300">{isPlaying ? '🎵 Playing' : '⏸️ Paused'}</span>
-              </div>
-            </div>
+            </ModernCard>
 
-            <PixelButton variant="success" className="p-2 flex items-center space-x-2" onClick={openAboutModal}>
-              <Users className="w-4 h-4 animate-pulse" />
-              <span>👥 About us</span>
-            </PixelButton>
-
-            <PixelButton variant="secondary" className="p-2" onClick={() => console.log('Settings')}>
-              <Settings className="w-4 h-4 animate-spin" style={{ animationDuration: '8s' }} />
-            </PixelButton>
+            <ModernButton variant="success" onClick={openAboutModal} className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span>Team</span>
+            </ModernButton>
           </div>
         </div>
-      </PixelPanel>
-
-      {/* Tab Navigation */}
-      <div className="flex-shrink-0 flex space-x-2">
-        <PixelButton
-          onClick={switchToChat}
-          variant={activeTab === 'chat' ? 'primary' : 'secondary'}
-          className="flex-grow flex items-center justify-center space-x-2"
-        >
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          <span>🔮 AI Arcanum</span>
-        </PixelButton>
-        <PixelButton
-          onClick={switchToRecipes}
-          variant={activeTab === 'recipes' ? 'primary' : 'secondary'}
-          className="flex-grow flex items-center justify-center space-x-2"
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>📚 Recipe Grimoire</span>
-        </PixelButton>
-      </div>
+      </ModernCard>
 
       {/* Content Area */}
-      <PixelPanel className="flex-1 flex flex-col min-h-0 relative">
-        {activeTab === 'chat' && (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <ModernCard className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {messages.map((message, index) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`max-w-xl p-4 relative transition-all duration-300 hover:scale-105 ${
-                      message.type === 'user'
-                        ? 'bg-gradient-to-br from-blue-800 via-blue-700 to-cyan-800 shadow-lg shadow-blue-500/30'
-                        : 'bg-gradient-to-br from-purple-800 via-purple-700 to-indigo-800 shadow-lg shadow-purple-500/30'
-                    }`}
-                     style={{ 
-                       clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))',
-                       filter: `drop-shadow(0 0 10px ${message.type === 'user' ? 'rgba(59, 130, 246, 0.4)' : 'rgba(147, 51, 234, 0.4)'})`
-                     }}
-                  >
-                    {message.type === 'ai' && (
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-pulse">
-                          🔮
+                  <div className={`max-w-2xl transition-all duration-300 hover:scale-[1.02]`}>
+                    <div
+                      className={`p-4 rounded-2xl backdrop-blur-sm border ${
+                        message.type === 'user'
+                          ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-400/30'
+                          : 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30'
+                      }`}
+                    >
+                      {message.type === 'ai' && (
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-sm">
+                            🤖
+                          </div>
+                          <span className="text-emerald-300 text-sm font-medium">Arcanum</span>
                         </div>
-                        <span className="text-purple-300 text-sm font-bold">Arcanum</span>
+                      )}
+                      <p className="text-sm leading-relaxed">{message.content}</p>
+                      <div className="text-xs text-gray-400 mt-2 text-right">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
-                    )}
-                    <p className="text-sm leading-relaxed">{message.content}</p>
-                    <div className="text-xs text-slate-300 mt-2 text-right opacity-70">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
               ))}
               
               {isTyping && (
-                <div className="flex justify-start animate-fadeIn">
-                  <div className="bg-gradient-to-br from-purple-800 to-indigo-800 p-4 shadow-lg shadow-purple-500/30" style={{ 
-                    clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))',
-                    filter: 'drop-shadow(0 0 10px rgba(147, 51, 234, 0.4))'
-                  }}>
+                <div className="flex justify-start">
+                  <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30 p-4 rounded-2xl border backdrop-blur-sm">
                     <div className="flex items-center space-x-2 mb-2">
-                      <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center animate-pulse">
-                        🔮
+                      <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-sm">
+                        🤖
                       </div>
-                      <span className="text-purple-300 text-sm font-bold">Arcanum</span>
+                      <span className="text-emerald-300 text-sm font-medium">Arcanum</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-sm text-purple-200">Consulting the ethereal archives</span>
+                      <span className="text-sm text-gray-300">Analysiere Quantenstrukturen</span>
                       <div className="flex space-x-1">
-                        <MagicalOrb color="#8b5cf6" size="w-2 h-2" delay={0} />
-                        <MagicalOrb color="#a855f7" size="w-2 h-2" delay={0.2} />
-                        <MagicalOrb color="#c084fc" size="w-2 h-2" delay={0.4} />
+                        <MagicalOrb color="#10b981" size="w-2 h-2" delay={0} />
+                        <MagicalOrb color="#06b6d4" size="w-2 h-2" delay={0.2} />
+                        <MagicalOrb color="#8b5cf6" size="w-2 h-2" delay={0.4} />
                       </div>
                     </div>
                   </div>
@@ -621,184 +564,45 @@ const AlchemyApp = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t-2 border-slate-600 bg-gradient-to-r from-slate-800/50 to-slate-700/50 p-4">
+            <div className="border-t border-white/10 p-4 bg-white/5">
               <div className="flex space-x-3">
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  placeholder="🔮 Ask about magical recipes..."
-                  className="flex-1 bg-gradient-to-r from-slate-700 to-slate-600 border-2 border-purple-500/50 rounded-lg px-4 py-2 text-white placeholder-purple-300 focus:outline-none focus:border-purple-400 focus:shadow-lg focus:shadow-purple-500/30 transition-all duration-300"
+                  placeholder="Beschreibe deine Alchemie-Ideen..."
+                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400/50 focus:bg-white/15 transition-all duration-300 backdrop-blur-sm"
                 />
-                <PixelButton onClick={handleSendMessage} className="px-5 relative">
+                <ModernButton onClick={handleSendMessage} className="px-6 flex items-center space-x-2">
                   <Send className="w-5 h-5" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded animate-pulse"></div>
-                </PixelButton>
+                  <span>Senden</span>
+                </ModernButton>
               </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === 'recipes' && (
-          <div className="flex-1 flex flex-col">
-            <div className="p-4 border-b-2 border-slate-600 bg-gradient-to-r from-slate-800/50 to-slate-700/50">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-bold text-purple-300 flex items-center space-x-2">
-                    <BookOpen className="w-5 h-5 animate-pulse" />
-                    <span>📚 Recipe Grimoire</span>
-                  </h2>
-                  <p className="text-sm text-slate-400">{savedRecipes.length} mystical formulas catalogued</p>
-                </div>
-                <PixelButton onClick={saveNewRecipe} variant="success" className="flex items-center space-x-2">
-                  <Plus className="w-4 h-4" />
-                  <span>✨ New Recipe</span>
-                </PixelButton>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {savedRecipes.map((recipe, index) => (
-                  <div
-                    key={recipe.id}
-                    className={`border-2 p-4 transition-all duration-500 shadow-xl hover:scale-105 hover:shadow-2xl animate-fadeIn ${getRarityBorder(recipe.rarity)}`}
-                    style={{
-                      clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
-                      boxShadow: `0 8px 32px ${recipe.color}30`,
-                      background: `linear-gradient(135deg, ${recipe.color}20, ${recipe.color}05, transparent)`,
-                      animationDelay: `${index * 0.1}s`
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl border-2 animate-pulse" style={{ backgroundColor: recipe.color + '40', borderColor: recipe.color, boxShadow: `0 0 20px ${recipe.color}60` }}>
-                            {recipe.icon}
-                          </div>
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent animate-ping" style={{ animationDuration: '3s' }}></div>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-white text-lg">{recipe.name}</h3>
-                          <span className={`text-xs font-bold px-3 py-1 rounded-full bg-black/40 border ${getRarityBorder(recipe.rarity)} ${getRarityBorder(recipe.rarity).replace('border-', 'text-')}`}>
-                            ⭐ {recipe.rarity}
-                          </span>
-                        </div>
-                      </div>
-                      <PixelButton onClick={() => deleteRecipe(recipe.id)} variant="danger" className="p-2">
-                        <Trash2 className="w-4 h-4" />
-                      </PixelButton>
-                    </div>
-                    
-                    <div className="space-y-3 text-sm mt-4">
-                      <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                        <div className="text-purple-300 font-semibold text-sm mb-2 flex items-center space-x-1">
-                          <Droplets className="w-3 h-3" />
-                          <span>Ingredients:</span>
-                        </div>
-                        <div className="text-slate-300 flex flex-wrap gap-2">
-                          {recipe.ingredients.map(ing => 
-                            <span key={ing} className="bg-purple-800/30 px-2 py-1 rounded text-xs border border-purple-600/30">
-                              ✨ {ing}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Zap className="w-3 h-3 text-green-400" />
-                          <span className="text-purple-300 font-semibold text-sm">Magical Effect:</span>
-                        </div>
-                        <span className="text-green-300 text-sm">🌟 {recipe.effect}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2 mt-4 pt-3 border-t border-white/10">
-                      <PixelButton variant="secondary" className="text-xs px-3 py-2 flex items-center space-x-1" onClick={() => console.log('View recipe', recipe.id)}>
-                        <Eye className="w-3 h-3" />
-                        <span>👁️ Study</span>
-                      </PixelButton>
-                      <PixelButton variant="primary" className="text-xs px-3 py-2 flex items-center space-x-1" onClick={() => console.log('Brew recipe', recipe.id)}>
-                        <Flame className="w-3 h-3 animate-pulse" />
-                        <span>🔥 Brew Now</span>
-                      </PixelButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
-          </div>
-        )}
-      </PixelPanel>
+        </ModernCard>
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
         }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-        
-        @keyframes modalBackdrop {
-          from { opacity: 0; backdrop-filter: blur(0px); }
-          to { opacity: 1; backdrop-filter: blur(12px); }
-        }
-        .animate-modalBackdrop {
-          animation: modalBackdrop 0.4s ease-out forwards;
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
         }
         
-        @keyframes modalAppear {
-          from { 
-            opacity: 0; 
-            transform: scale(0.8) translateY(-20px); 
-            filter: drop-shadow(0 0 0px rgba(139, 92, 246, 0));
-          }
-          to { 
+        @keyframes pulse-glow {
+          0%, 100% { 
             opacity: 1; 
-            transform: scale(1) translateY(0px); 
-            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.5; 
+            transform: scale(1.1);
           }
         }
-        .animate-modalAppear {
-          animation: modalAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        
-        @keyframes imageReveal {
-          from { opacity: 0; transform: scale(1.1); filter: brightness(0.3) contrast(1.1); }
-          to { opacity: 1; transform: scale(1); filter: brightness(0.9) contrast(1.1); }
-        }
-        .animate-imageReveal {
-          animation: imageReveal 0.8s ease-out 0.2s forwards;
-          opacity: 0;
-        }
-        
-        @keyframes foregroundAppear {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-foregroundAppear {
-          animation: foregroundAppear 1s ease-out 0.4s forwards;
-          opacity: 0;
-        }
-        
-        @keyframes textSlideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0px); }
-        }
-        .animate-textSlideUp {
-          animation: textSlideUp 0.7s ease-out 0.6s forwards;
-          opacity: 0;
-        }
-        
-        @keyframes orbFloat {
-          0% { opacity: 0; transform: translateY(20px) scale(0.5); }
-          50% { opacity: 1; transform: translateY(-10px) scale(1.2); }
-          100% { opacity: 1; transform: translateY(0px) scale(1); }
-        }
-        .animate-orbFloat {
-          animation: orbFloat 1.5s ease-out 0.8s forwards;
-          opacity: 0;
+        .animate-pulse-glow {
+          animation: pulse-glow 3s ease-in-out infinite;
         }
       `}</style>
     </div>
