@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, Play, Pause, Volume2, Users, X, ChevronRight, Beaker, Atom, Gem, Settings } from 'lucide-react';
+import { Send, Play, Pause, Volume2, Users, X, ChevronRight, Beaker, Atom, Gem } from 'lucide-react';
 
 interface PixelButtonProps {
   children: React.ReactNode;
@@ -513,7 +513,7 @@ const AlchemyApp = () => {
                         { name: 'Linda Nehring', role: 'Konzeption und Implementierung von RAG und Vektordatenbank', icon: '🗄️' },
                         { name: 'Laurin Layyous', role: 'Vergleich verschiedener KI-Modelle zur Ermittlung optimaler Ergebnisse', icon: '🤖' },
                         { name: 'Daniel Kuhlicke', role: 'Implementierung eines Web-Scrapers zur automatisierten Datenbeschaffung', icon: '🕷️' }
-                      ].map((member, index) => (
+                      ].map((member) => (
                         <div 
                           key={member.name}
                           className="flex items-start space-x-4 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-300 hover:scale-105"
@@ -611,7 +611,7 @@ const AlchemyApp = () => {
             {/* Content Area */}
       <ModernCard className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((message, index) => (
+          {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
