@@ -146,7 +146,13 @@ const AlchemyApp = () => {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(console.error);
+        audioRef.current.play().catch((error) => {
+          console.error('Error playing audio:', error);
+          // User interaction required for audio
+          if (error.name === 'NotAllowedError') {
+            console.log('Audio autoplay blocked by browser. User interaction required.');
+          }
+        });
       }
       setIsPlaying(!isPlaying);
     }
@@ -180,6 +186,12 @@ const AlchemyApp = () => {
       audioRef.current.addEventListener('ended', () => setIsPlaying(false));
       audioRef.current.addEventListener('play', () => setIsPlaying(true));
       audioRef.current.addEventListener('pause', () => setIsPlaying(false));
+      audioRef.current.addEventListener('loadeddata', () => {
+        console.log('Audio loaded successfully');
+      });
+      audioRef.current.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+      });
     }
   }, [volume]);
 
@@ -326,8 +338,15 @@ const AlchemyApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white flex flex-col p-4 space-y-6 relative overflow-hidden">
       {/* Audio Element */}
-      <audio ref={audioRef} loop preload="auto">
-        <source src="/background-music.mp3" type="audio/mpeg" />
+      <audio 
+        ref={audioRef} 
+        loop 
+        preload="auto"
+        onLoadedData={() => console.log('Audio file loaded successfully')}
+        onError={(e) => console.error('Audio loading error:', e)}
+      >
+        <source src="/Fantasy Background Music - Celtic Relaxation - Free Use.mp3" type="audio/mpeg" />
+        Your browser does not support the audio element.
       </audio>
 
       {/* Hidden Video Element for Preloading */}
