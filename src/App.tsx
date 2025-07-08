@@ -134,9 +134,11 @@ const AlchemyApp = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [videoBlob, setVideoBlob] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Audio controls
   const togglePlayPause = useCallback(() => {
@@ -237,18 +239,88 @@ const AlchemyApp = () => {
 
 
 
+  // Load video on app start
+  useEffect(() => {
+    const loadVideo = async () => {
+      try {
+        // Clean up old blob URL storage if exists
+        const oldBlobUrl = localStorage.getItem('teamVideoUrl');
+        if (oldBlobUrl) {
+          localStorage.removeItem('teamVideoUrl');
+        }
+
+        // Check if video is already cached as base64
+        const cachedVideoBase64 = localStorage.getItem('teamVideoBase64');
+        if (cachedVideoBase64) {
+          console.log('Video found in cache, loading instantly...');
+          setVideoBlob(cachedVideoBase64);
+          setIsVideoReady(true);
+          
+          // Preload and start video element when cached
+          setTimeout(() => {
+            if (videoRef.current) {
+              videoRef.current.load();
+              videoRef.current.play().catch(console.error);
+            }
+          }, 100);
+          return;
+        }
+
+        console.log('Loading video from server...');
+        const response = await fetch('/team.mp4');
+        if (response.ok) {
+          const blob = await response.blob();
+          
+          // Convert blob to base64 for persistent storage
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64String = reader.result as string;
+            localStorage.setItem('teamVideoBase64', base64String);
+            setVideoBlob(base64String);
+            setIsVideoReady(true);
+            console.log('Video loaded and cached successfully');
+            
+            // Preload and start video element
+            if (videoRef.current) {
+              videoRef.current.load();
+              videoRef.current.play().catch(console.error);
+            }
+          };
+          reader.onerror = () => {
+            console.error('Error reading video file');
+            setVideoBlob('/team.mp4');
+            setIsVideoReady(true);
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          throw new Error('Failed to load video from server');
+        }
+      } catch (error) {
+        console.error('Error loading video:', error);
+        // Fallback to direct video path
+        setVideoBlob('/team.mp4');
+        setIsVideoReady(true);
+      }
+    };
+
+    loadVideo();
+  }, []);
+
   const openAboutModal = useCallback(() => {
     setIsAboutModalOpen(true);
-    setIsVideoLoaded(false); // Reset video loading state
   }, []);
   
   const closeAboutModal = useCallback(() => {
+    // Sync back to hidden video before closing
+    const modalVideo = document.querySelector('.modal-video') as HTMLVideoElement;
+    if (modalVideo && videoRef.current) {
+      videoRef.current.currentTime = modalVideo.currentTime;
+      // Ensure hidden video continues playing
+      if (videoRef.current.paused) {
+        videoRef.current.play().catch(console.error);
+      }
+    }
     setIsAboutModalOpen(false);
-    setIsVideoLoaded(false);
-  }, []);
-
-  const handleVideoLoaded = useCallback(() => {
-    setIsVideoLoaded(true);
   }, []);
 
   return (
@@ -257,6 +329,19 @@ const AlchemyApp = () => {
       <audio ref={audioRef} loop preload="auto">
         <source src="/background-music.mp3" type="audio/mpeg" />
       </audio>
+
+      {/* Hidden Video Element for Preloading */}
+      {videoBlob && (
+        <video
+          ref={videoRef}
+          className="hidden"
+          preload="auto"
+          loop
+          muted
+          playsInline
+          src={videoBlob}
+        />
+      )}
 
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -305,59 +390,57 @@ const AlchemyApp = () => {
 
             <div className="relative w-full h-[60vh] overflow-hidden rounded-t-2xl">
               {/* Video Background */}
-              <video
-                className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-                onLoadedData={handleVideoLoaded}
-              >
-                <source src="/team.mp4" type="video/mp4" />
-              </video>
-              
-              {/* Loading Overlay */}
-              {!isVideoLoaded && (
-                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-emerald-300 text-lg">Video wird geladen...</p>
-                  </div>
-                </div>
+              {videoBlob && isVideoReady && (
+                <video
+                  className="absolute inset-0 w-full h-full object-cover modal-video"
+                  loop
+                  muted
+                  playsInline
+                  src={videoBlob}
+                  onLoadedData={(e) => {
+                    // Sync with preloaded video for seamless continuation
+                    const modalVideo = e.target as HTMLVideoElement;
+                    if (videoRef.current && modalVideo && videoRef.current.readyState >= 2) {
+                      modalVideo.currentTime = videoRef.current.currentTime;
+                      modalVideo.play().catch(console.error);
+                      console.log('Video synchronized at position:', videoRef.current.currentTime);
+                    }
+                  }}
+                  onCanPlay={(e) => {
+                    // Backup sync when video is ready to play
+                    const modalVideo = e.target as HTMLVideoElement;
+                    if (videoRef.current && modalVideo && modalVideo.currentTime === 0) {
+                      modalVideo.currentTime = videoRef.current.currentTime;
+                    }
+                  }}
+                />
               )}
               
               {/* Video Overlay */}
-              {isVideoLoaded && (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-gray-900/30" />
-                  
-                  {/* Floating Effects */}
-                  <div className="absolute top-10 left-10">
-                    <MagicalOrb color="#10b981" size="w-6 h-6" delay={0} />
-                  </div>
-                  <div className="absolute top-20 right-20">
-                    <MagicalOrb color="#8b5cf6" size="w-4 h-4" delay={1} />
-                  </div>
-                  <div className="absolute bottom-20 left-1/4">
-                    <MagicalOrb color="#06b6d4" size="w-5 h-5" delay={0.5} />
-                  </div>
-                  <div className="absolute top-1/3 right-1/3">
-                    <MagicalOrb color="#f59e0b" size="w-3 h-3" delay={1.5} />
-                  </div>
-                </>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-gray-900/30" />
+              
+              {/* Floating Effects */}
+              <div className="absolute top-10 left-10">
+                <MagicalOrb color="#10b981" size="w-6 h-6" delay={0} />
+              </div>
+              <div className="absolute top-20 right-20">
+                <MagicalOrb color="#8b5cf6" size="w-4 h-4" delay={1} />
+              </div>
+              <div className="absolute bottom-20 left-1/4">
+                <MagicalOrb color="#06b6d4" size="w-5 h-5" delay={0.5} />
+              </div>
+              <div className="absolute top-1/3 right-1/3">
+                <MagicalOrb color="#f59e0b" size="w-3 h-3" delay={1.5} />
+              </div>
             </div>
 
-            {/* Content Panel - Only show when video is loaded */}
-            {isVideoLoaded && (
+            {/* Content Panel */}
               <div className="w-full bg-gradient-to-br from-gray-900/95 to-slate-900/90 p-8 backdrop-blur-xl rounded-b-2xl">
                 <div className="text-center space-y-6">
                   <div className="flex items-center justify-center space-x-3 mb-6">
-                    <FloatingElement>
-                      <Users className="w-8 h-8 text-emerald-400" />
-                    </FloatingElement>
+                    <Users className="w-8 h-8 text-emerald-400" />
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                      Unser Innovatives Team
+                      Unser Team
                     </h2>
                   </div>
                   
@@ -436,7 +519,6 @@ const AlchemyApp = () => {
                   </div>
                 </div>
               </div>
-            )}
           </ModernCard>
         </div>
       )}
@@ -507,80 +589,80 @@ const AlchemyApp = () => {
         </div>
       </ModernCard>
 
-      {/* Content Area */}
+            {/* Content Area */}
       <ModernCard className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {messages.map((message, index) => (
+          {messages.map((message, index) => (
+            <div
+              key={message.id}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-2xl transition-all duration-300 hover:scale-[1.02]`}>
                 <div
-                  key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`p-4 rounded-2xl backdrop-blur-sm border ${
+                    message.type === 'user'
+                      ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-400/30'
+                      : 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30'
+                  }`}
                 >
-                  <div className={`max-w-2xl transition-all duration-300 hover:scale-[1.02]`}>
-                    <div
-                      className={`p-4 rounded-2xl backdrop-blur-sm border ${
-                        message.type === 'user'
-                          ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-400/30'
-                          : 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30'
-                      }`}
-                    >
-                      {message.type === 'ai' && (
-                        <div className="flex items-center space-x-2 mb-2">
-                          <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-sm">
-                            🤖
-                          </div>
-                          <span className="text-emerald-300 text-sm font-medium">Arcanum</span>
-                        </div>
-                      )}
-                      <p className="text-sm leading-relaxed">{message.content}</p>
-                      <div className="text-xs text-gray-400 mt-2 text-right">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30 p-4 rounded-2xl border backdrop-blur-sm">
+                  {message.type === 'ai' && (
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-sm">
                         🤖
                       </div>
                       <span className="text-emerald-300 text-sm font-medium">Arcanum</span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-gray-300">Analysiere Quantenstrukturen</span>
-                      <div className="flex space-x-1">
-                        <MagicalOrb color="#10b981" size="w-2 h-2" delay={0} />
-                        <MagicalOrb color="#06b6d4" size="w-2 h-2" delay={0.2} />
-                        <MagicalOrb color="#8b5cf6" size="w-2 h-2" delay={0.4} />
-                      </div>
-                    </div>
+                  )}
+                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <div className="text-xs text-gray-400 mt-2 text-right">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="border-t border-white/10 p-4 bg-white/5">
-              <div className="flex space-x-3">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Beschreibe deine Alchemie-Ideen..."
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400/50 focus:bg-white/15 transition-all duration-300 backdrop-blur-sm"
-                />
-                <ModernButton onClick={handleSendMessage} className="px-6 flex items-center space-x-2">
-                  <Send className="w-5 h-5" />
-                  <span>Senden</span>
-                </ModernButton>
               </div>
-                        </div>
-        </ModernCard>
+            </div>
+          ))}
+          
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-emerald-400/30 p-4 rounded-2xl border backdrop-blur-sm">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-sm">
+                    🤖
+                  </div>
+                  <span className="text-emerald-300 text-sm font-medium">Arcanum</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-300">Analysiere Quantenstrukturen</span>
+                  <div className="flex space-x-1">
+                    <MagicalOrb color="#10b981" size="w-2 h-2" delay={0} />
+                    <MagicalOrb color="#06b6d4" size="w-2 h-2" delay={0.2} />
+                    <MagicalOrb color="#8b5cf6" size="w-2 h-2" delay={0.4} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="border-t border-white/10 p-4 bg-white/5">
+          <div className="flex space-x-3">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Beschreibe deine Alchemie-Ideen..."
+              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-emerald-400/50 focus:bg-white/15 transition-all duration-300 backdrop-blur-sm"
+            />
+            <ModernButton onClick={handleSendMessage} className="px-6 flex items-center space-x-2">
+              <Send className="w-5 h-5" />
+              <span>Senden</span>
+            </ModernButton>
+          </div>
+        </div>
+      </ModernCard>
 
       <style>{`
         @keyframes float {
